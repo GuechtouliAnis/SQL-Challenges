@@ -141,13 +141,29 @@ FROM (
 WHERE rnk = 1;
 
 /*8. What is the total items and amount spent for each member before they became a member?*/
-
-
+SELECT
+  s.customer_id,
+  COUNT(m.price) AS qty,
+  SUM(m.price) AS amount
+FROM sales s
+JOIN menu m ON s.product_id = m.product_id
+LEFT JOIN members me ON s.customer_id = me.customer_id
+WHERE s.order_date < me.join_date OR me.join_date IS NULL
+GROUP BY s.customer_id;
 
 /*9. If each $1 spent equates to 10 points and sushi has a 2x points multiplier
 - how many points would each customer have?*/
-
-
+SELECT customer_id, SUM(points) AS points
+FROM (
+  SELECT
+    s.customer_id,
+    CASE
+      WHEN m.product_name = 'sushi' THEN price * 10 * 2
+      ELSE price * 10
+    END AS points
+  FROM sales s
+  JOIN menu m ON s.product_id = m.product_id) AS sub
+GROUP BY customer_id;
 
 /*10. In the first week after a customer joins the program (including their join date) they earn 2x points on all items, not just sushi
 - how many points do customer A and B have at the end of January?*/
