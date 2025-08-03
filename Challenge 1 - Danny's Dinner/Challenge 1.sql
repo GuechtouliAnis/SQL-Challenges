@@ -167,13 +167,72 @@ GROUP BY customer_id;
 
 /*10. In the first week after a customer joins the program (including their join date) they earn 2x points on all items, not just sushi
 - how many points do customer A and B have at the end of January?*/
+SELECT
+  customer_id,
+  SUM(points) AS points
+FROM (
+  SELECT
+    s.customer_id,
+    m.price,
+    CASE
+      WHEN (s.order_date < me.join_date
+            OR s.order_date > DATE(me.join_date, '+7 days')) THEN
+        CASE
+          WHEN m.product_name = 'sushi' THEN m.price * 10 * 2
+          ELSE m.price * 10
+        END
+      ELSE m.price * 10 * 2
+    END AS points
+  FROM sales s
+  LEFT JOIN members me ON s.customer_id = me.customer_id
+  JOIN menu m ON s.product_id = m.product_id
+  WHERE s.customer_id IN ('A', 'B')
+  AND s.order_date < '2021-02-01') AS sub
+GROUP BY customer_id;
 
-
-
-/* Bonus. Recreating the table*/
-
-
+/* Bonus. Recreating the table */
+SELECT
+  s.customer_id,
+  s.order_date,
+  m.product_name,
+  m.price,
+  CASE
+    WHEN (me.join_date IS NOT NULL
+          AND s.order_date >= me.join_date) THEN 'Y'
+    ELSE 'N'
+  END AS member 
+FROM sales s
+LEFT JOIN menu m ON s.product_id = m.product_id
+LEFT JOIN members me ON s.customer_id = me.customer_id
+ORDER BY s.customer_id, s.order_date, m.product_name;
 
 /*Ranking*/
-
-
+WITH RECREATED AS (
+  SELECT
+    s.customer_id,
+    s.order_date,
+    m.product_name,
+    m.price,
+    CASE
+      WHEN (me.join_date IS NOT NULL AND s.order_date >= me.join_date) THEN 'Y'
+      ELSE 'N'
+    END AS member,
+    ROW_NUMBER() OVER (ORDER BY s.customer_id, s.order_date, m.product_name) AS row_id
+  FROM sales s
+  LEFT JOIN menu m ON s.product_id = m.product_id
+  LEFT JOIN members me ON s.customer_id = me.customer_id),
+RANKED AS (
+  SELECT
+    row_id,
+    RANK() OVER (PARTITION BY customer_id ORDER BY order_date) AS ranking
+  FROM RECREATED
+  WHERE member = 'Y')
+SELECT
+  r.customer_id,
+  r.order_date,
+  r.product_name,
+  r.price,
+  r.member,
+  rk.ranking
+FROM RECREATED r
+LEFT JOIN RANKED rk ON r.row_id = rk.row_id;
