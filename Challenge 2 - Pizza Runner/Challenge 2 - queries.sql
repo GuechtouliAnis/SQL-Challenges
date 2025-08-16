@@ -1,14 +1,20 @@
--- database: Pizza Runner.db
+-- database: pizza_runner.db
 
 /*Querying*/
 
 -- A. Pizza Metrics --
 
 /*1. How many pizzas were ordered?*/
+SELECT *
+FROM runner_orders;
 
 /*2. How many unique customer orders were made?*/
 
 /*3. How many successful orders were delivered by each runner?*/
+SELECT runner_id, COUNT(*) AS orders
+FROM runner_orders
+WHERE pickup_time != 'null'
+GROUP BY runner_id;
 
 /*4. How many of each type of pizza was delivered?*/
 

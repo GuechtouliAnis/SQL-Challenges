@@ -1,4 +1,4 @@
--- database: Pizza Runner.db
+-- database: pizza_runner.db
 
 /*Database creation*/
 
